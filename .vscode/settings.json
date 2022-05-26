@@ -1,0 +1,11 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  },
+  "python.defaultInterpreterPath": "/home/phoenix/.local/share/virtualenvs/mtg-flask-KR690BDy/bin/python"
+}

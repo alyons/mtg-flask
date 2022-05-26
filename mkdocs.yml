@@ -1,0 +1,37 @@
+site_name: Pokemon Flask
+site_description: Documentation for the Pokemon Flask API
+site_url: https://pyroticblaziken.gitlab.io/pokemon-flask
+repo_url: https://gitlab.io/pyroticblaziken/pokemon-flask
+edit_uri: blob/main/docs
+repo_name: pyroticblaziken/pokemon-flask
+site_dir: public
+
+nav:
+- Home:
+  - Overview: index.md
+
+theme:
+  name: readthedocs
+
+plugins:
+- search
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        rendering:
+          show_source: false
+        selection:
+          filters:
+            - "!^_" # exclude all members that start with _
+            - "^__init__$" # always include init
+        setup_commands:
+          - import sys
+          - sys.path.append("src")
+    watch:
+      - src
+
+extra:
+  social:
+  - icon: fontawesome/brands/gitlab
+    link: https://gitlab.com/pyroticblaziken

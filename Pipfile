@@ -1,0 +1,28 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+reprint = "*"
+tqdm = "*"
+rich = "*"
+requests = "*"
+flask = "*"
+firebase-admin = "*"
+pandas = "*"
+
+[requires]
+python_version = "3.10"
+
+[dev-packages]
+pytest = "*"
+pytest-cov = "*"
+mkdocs = ">=1.1.2" # Documentation static site generator & deployment tool
+mkdocs-material = ">=5.4.0" # Replace with Custom Theme if desired
+pytkdocs = ">=0.15.0"
+docstring_parser = ">=0.13"
+mkdocstrings = ">=0.17.0"
+pylint = "*"
+rich = "*"
