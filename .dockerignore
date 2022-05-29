@@ -1,0 +1,14 @@
+# Ignore Everything
+**
+
+# Ignore specific file types
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+.pytest_cache
+
+# Explicit Includes
+!Pipfile
+!Pipfile.lock
+!server/

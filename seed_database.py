@@ -7,6 +7,8 @@ import pandas as pd
 
 from firebase_admin import credentials
 from firebase_admin import firestore
+from pymongo.mongo_client import MongoClient
+from pymongo.database import Database
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 
@@ -95,7 +97,7 @@ def print_dict(dict: Dict, keys=None):
 
 
 def load_cards():
-    all_cards = pd.read_csv('/home/phoenix/projects/pokemon-flask-react/server/all_mtg_cards.csv')
+    all_cards = pd.read_csv('all_mtg_cards.csv')
     no_dupes = all_cards.drop_duplicates(subset='name')
 
     return no_dupes
@@ -128,5 +130,23 @@ def seed_database() -> None:
     console.print('Uploaded all cards!')
 
 
+def seed_mongodb() -> None:
+    console.print('Seed MtG Card Data')
+    with console.status('Loading data from csv...'):
+        data_frame = load_cards()
+    console.print(f'Loaded {data_frame.size} unique cards!')
+
+    with console.status('Parsing cards...'):
+        cards = [parse_card(row) for _, row in data_frame.iterrows()]
+    console.print('Parsed the cards!')
+    
+    with console.status('Batch writing to MongoDB...'):
+        with MongoClient(f'mongodb://app:1uaV4WhBcoPXq6ZeT8W2@localhost:27017/?authSource=mtgSearchApp') as client:
+            db = client['mtgSearchApp']
+            db['cards'].insert_many(cards)
+
+    console.print('Uploaded all cards!')
+
+
 if __name__ == '__main__':
-    seed_database()
+    seed_mongodb()
