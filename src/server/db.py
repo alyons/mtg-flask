@@ -1,12 +1,11 @@
-from pymongo.mongo_client import MongoClient
-from pymongo.database import Database
-
 from flask import current_app, g
+from pymongo.mongo_client import MongoClient
 
+def get_client() -> MongoClient:
+    if 'client' not in g:
+        g.client = MongoClient(get_connection_string())
 
-def get_db() -> Database:
-    if 'db' not in g:
-        client = MongoClient(f'mongodb://mtgSearchApp:1uaV4WhBcoPXq6ZeT8W2@localhost:27017/?authSource=admin')
-        g.db = client.mtgSearch
+    return g.client
 
-    return g.db
+def get_connection_string() -> str:
+    return f'mongodb://{current_app.config["mongo"]["username"]}:{current_app.config["mongo"]["password"]}@{current_app.config["mongo"]["url"]}/?authSource={current_app.config["mongo"]["authsource"]}'

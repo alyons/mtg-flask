@@ -1,14 +1,10 @@
 import ast
 import math
 from typing import Any, Dict
-import firebase_admin
 import json
 import pandas as pd
 
-from firebase_admin import credentials
-from firebase_admin import firestore
 from pymongo.mongo_client import MongoClient
-from pymongo.database import Database
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 
@@ -101,33 +97,6 @@ def load_cards():
     no_dupes = all_cards.drop_duplicates(subset='name')
 
     return no_dupes
-
-
-def seed_database() -> None:
-    console.print('Seed MtG Card Data')
-    with console.status('Loading data from csv...'):
-        data_frame = load_cards()
-    console.print(f'Loaded {data_frame.size} unique cards!')
-
-    cred = credentials.Certificate('/home/phoenix/projects/progression-website/.keys/sa_key.json')
-    firebase_admin.initialize_app(cred)
-
-    db = firestore.client()
-
-    completed = 0
-    total = data_frame.size
-    job_progress = make_job_progress()
-    task = job_progress.add_task(f'Uploading cards...', total=total)
-    
-    with console.status(job_progress):
-        for _, row in data_frame.iterrows():
-            card = parse_card(row)
-            db.collection(u'mtg-cards').document(card['id']).set(card)
-            completed += 1
-
-            job_progress.update(task, completed=completed, description=f'Uploading cards...')
-    
-    console.print('Uploaded all cards!')
 
 
 def seed_mongodb() -> None:

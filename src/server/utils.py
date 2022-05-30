@@ -32,7 +32,7 @@ def invert_colors(colors: str) -> list[str]:
     return output
 
 
-MANA_REGEX = r'\{(\d+|[wubrgx])\|?([wubrgp2])?\}'
+MANA_REGEX = r'\{(\d+|[wubrgx])\/?([wubrgp2])?\}'
 
 def _parse_symbol_value(symbol: tuple[str, str]) -> int:
     match symbol[1].lower():
@@ -46,11 +46,7 @@ def _parse_symbol_value(symbol: tuple[str, str]) -> int:
 
 
 def mana_value(mana_cost: str) -> int:
-    mv = 0
-
     mana_symbols = re.findall(MANA_REGEX, mana_cost, re.IGNORECASE)
-    print(mana_symbols)
-
+    # print(mana_symbols)
     values = [_parse_symbol_value(s) for s in mana_symbols]
-
     return sum(values)
