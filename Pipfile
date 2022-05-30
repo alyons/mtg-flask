@@ -5,10 +5,8 @@ name = "pypi"
 
 [packages]
 flask = "*"
-gunicorn = "*"
 pymongo = "*"
 reprint = "*"
-schematics = "*"
 waitress = "*"
 marshmallow = "*"
 
