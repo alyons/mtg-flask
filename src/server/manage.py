@@ -5,14 +5,14 @@ from flask import Blueprint, flash, g, redirect, render_template, request, sessi
 from pymongo.errors import OperationFailure, ServerSelectionTimeoutError
 
 from .constants import ERROR_OBJ_NO_ENV_VARS
-from .db import get_client
+from .db import get_client, get_connection_string
 
 bp = Blueprint('manage', __name__, url_prefix='/manage')
 
 
 @bp.route('/liveness', methods=['GET'])
 def liveness():
-    data = { 'status': 'OKAY' }
+    data = { 'status': 'OKAY', 'mongodb': get_connection_string() }
     return data, 200
 
 
