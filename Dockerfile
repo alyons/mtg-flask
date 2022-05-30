@@ -15,7 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc
 # Install python dependencies in /.venv
 COPY Pipfile .
 COPY Pipfile.lock .
-RUN PIPENV_VENV_IN_PROJECT=1 pipenv install --deploy
+COPY setup.py .
+RUN PIPENV_VENV_IN_PROJECT=1 pipenv install
+RUN pipenv run python setup.py bdist_wheel
+RUN pipenv run pip install $(ls -d dist/*)
 
 FROM base as runtime
 
@@ -31,5 +34,9 @@ USER appuser
 # Install application into container
 COPY . .
 
+ENV PORT=8080
+
+EXPOSE 8080
+
 # Run the application
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 server:create_app
+CMD exec waitress-serve --call 'src.server:create_app'

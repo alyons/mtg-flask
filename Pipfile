@@ -9,26 +9,22 @@ gunicorn = "*"
 pymongo = "*"
 reprint = "*"
 schematics = "*"
-server = {path = ".", editable = true}
+waitress = "*"
 
 [dev-packages]
 docstring_parser = "*"
-firebase-admin = "*"
-flask = "*"
-gunicorn = "*"
 mkdocs = "*" # Documentation static site generator & deployment tool
 mkdocs-material = "*" # Replace with Custom Theme if desired
 mkdocstrings = "*"
 pandas = "*"
 pylint = "*"
-pymongo = "*"
 pytest = "*"
 pytest-cov = "*"
 pytkdocs = "*"
-reprint = "*"
-rich = "*"
-schematics = "*"
 pytest-watch = "*"
+rich = "*"
+server = {path = ".", editable = true}
+wheel = "*"
 
 [requires]
 python_version = "3.10"

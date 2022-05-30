@@ -11,4 +11,6 @@ __pycache__
 # Explicit Includes
 !Pipfile
 !Pipfile.lock
-!server/
+!setup.py
+!src/
+!wsgi.py
