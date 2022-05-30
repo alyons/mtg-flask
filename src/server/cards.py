@@ -1,6 +1,7 @@
 from flask import (Blueprint, flash, g, redirect, render_template, request, session, url_for, jsonify)
 from marshmallow import INCLUDE
 from pymongo import ASCENDING, DESCENDING
+from uuid import uuid1
 
 from .card_schema import CardSchema
 
@@ -13,9 +14,38 @@ blueprint = Blueprint('cards', __name__)
 
 
 @blueprint.route('/cards', methods=['POST'])
-@required_params(CardSchema(strict=True, unknown=INCLUDE))
+@required_params(CardSchema(unknown=INCLUDE))
 def create_single_card():
-    return { 'message': f'{request.method} Method Not Implemented' }, 500
+    new_card = request.get_json()
+
+    try:
+        with get_client() as client:
+            collection = client['mtgSearchApp']['cards']
+
+            if not new_card['id'] == None:
+                existing_card = collection.find_one({ 'id': new_card['id'] })
+                if existing_card:
+                    return { 'status': 'ERROR', 'message': 'Card already exists. Use PUT with /cards/<id> to update the card.' }, 400
+            else:
+                new_uuid = uuid1()
+                existing_card = collection.find_one({ 'id': f'{new_uuid}' })
+                while not existing_card == None:
+                    new_uuid = uuid1()
+                    existing_card = collection.find_one({ 'id': f'{new_uuid}' })
+            
+            existing_card = collection.find_one({ 'name': new_card['name'] })
+            if existing_card:
+                    return { 'status': 'ERROR', 'message': f'Card already exists. Use PUT with /cards/<id> to update the card.' }, 400
+            
+            result = collection.insert_one(new_card)
+    except BaseException as err:
+        print(f'Unhandled {type(err)=}: {err}')
+        return jsonify(f'Unhandled {type(err)=}: {err}'), 500
+
+    if result.acknowledged:
+        return { 'status': 'OK', 'message': 'Card successfully inserted', 'id': new_card['id'] }, 201
+    else:
+        return { 'status': 'ERROR', 'message': 'Database write not acknowledged' }, 500
 
 
 @blueprint.route('/cards', methods=['GET'])
@@ -60,9 +90,21 @@ def retrieve_single_card(id):
 
 
 @blueprint.route('/cards/<id>', methods=['PUT'])
-@required_params(CardSchema(strict=True, unknown=INCLUDE))
+@required_params(CardSchema(unknown=INCLUDE))
 def update_single_card(id):
-    return { 'message': f'{request.method} Method Not Implemented' }, 500
+    updated_card = request.get_json()
+    try:
+        with get_client() as client:
+            collection = client['mtgSearchApp']['cards']
+            result = collection.update_one({ 'id': id }, update={ '$set': updated_card })
+    except BaseException as err:
+        print(f'Unhandled {type(err)=}: {err}')
+        return jsonify(f'Unhandled {type(err)=}: {err}'), 500
+    
+    if result.acknowledged and result.modified_count == 1:
+        return { 'status': 'OK', 'message': 'Updated Card' }, 201
+    else:
+        return { 'status': 'ERROR', 'message': 'Failed to update card' }, 500
 
 
 @blueprint.route('/cards/<id>', methods=['DELETE'])
