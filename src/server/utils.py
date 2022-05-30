@@ -1,5 +1,8 @@
 import json
 import re
+from marshmallow import Schema, ValidationError
+from functools import wraps
+from flask import request
 
 
 def try_parse_int(x, base=10, default_value=None):
@@ -50,3 +53,19 @@ def mana_value(mana_cost: str) -> int:
     # print(mana_symbols)
     values = [_parse_symbol_value(s) for s in mana_symbols]
     return sum(values)
+
+
+def required_params(schema: Schema):
+    def decorator(fn):
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            try:
+                schema.load(request.get_json())
+            except ValidationError as err:
+                return { 'status': 'ERROR', 'details': err.messages }, 400
+
+            return fn(*args, **kwargs)
+        
+        return wrapper
+    return decorator

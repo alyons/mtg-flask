@@ -10,6 +10,7 @@ pymongo = "*"
 reprint = "*"
 schematics = "*"
 waitress = "*"
+marshmallow = "*"
 
 [dev-packages]
 docstring_parser = "*"
