@@ -13,10 +13,10 @@ from .mongodb_helper import build_filter, build_sort
 from .utils import required_params, try_parse_int, generate_exception_response
 
 DEFAULT_LIMIT = 20
-blueprint = Blueprint('cards', __name__)
+blueprint = Blueprint('cards', __name__, url_prefix='/cards')
 
 
-@blueprint.route('/cards', methods=['POST'])
+@blueprint.route('', methods=['POST'])
 @required_params(CardSchema(unknown=INCLUDE))
 def post_single_card():
     """Card Post
@@ -65,7 +65,7 @@ def post_single_card():
         return { 'status': 'ERROR', 'message': 'Database write not acknowledged' }, 500
 
 
-@blueprint.route('/cards', methods=['GET'])
+@blueprint.route('', methods=['GET'])
 def get_multiple_cards():
     """Cards Get
     ---
@@ -142,7 +142,7 @@ def get_multiple_cards():
         return generate_exception_response('Failed to get cards', err), 500
 
 
-@blueprint.route('/cards/<id>', methods=['GET'])
+@blueprint.route('/<id>', methods=['GET'])
 def get_single_card(id):
     """Card Get
     ---
@@ -173,7 +173,7 @@ def get_single_card(id):
 
 
 # !!! --- NOT WORKING --- !!!
-# @blueprint.route('/cards', methods = ['PUT'])
+# @blueprint.route('', methods = ['PUT'])
 # @required_params(UpdateBodySchema())
 # def put_multiple_cards():
 #     body = request.get_json()
@@ -190,7 +190,7 @@ def get_single_card(id):
 #         return { 'status': 'ERROR', 'message': 'Failed to update cards', 'details': f'{result}' }, 500
 
 
-@blueprint.route('/cards/<id>', methods=['PUT'])
+@blueprint.route('/<id>', methods=['PUT'])
 @required_params(CardSchema(unknown=INCLUDE))
 def put_single_card(id):
     """Card Put
@@ -223,7 +223,7 @@ def put_single_card(id):
         return { 'status': 'ERROR', 'message': 'Failed to update card' }, 500
 
 
-@blueprint.route('/cards/<id>', methods=['DELETE'])
+@blueprint.route('/<id>', methods=['DELETE'])
 def delete_single_card(id):
     """Card Delete
     ---
@@ -248,7 +248,7 @@ def delete_single_card(id):
 
 
 # Some Helper Calls for distinct calls and the like
-@blueprint.route('/cards/distinct/<key>', methods=['GET'])
+@blueprint.route('/distinct/<key>', methods=['GET'])
 def get_distinct_values_for_key(key):
     """Card Distinct Get
     ---
