@@ -2,20 +2,37 @@ from flask import (Blueprint, flash, g, redirect, render_template, request, sess
 from marshmallow import INCLUDE
 from pymongo import ASCENDING, DESCENDING
 from uuid import uuid1
+import json
 
-from .card_schema import CardSchema
+from .card_schema import CardSchema, VALID_FIELD_NAMES
+from .response_schema import CardsResponseSchema, DatabaseResponseSchema
+from .update_schema import UpdateBodySchema
 
 from .db import get_client
-from .query_builder import build_mongodb_query
-from .utils import required_params, try_parse_int
+from .mongodb_helper import build_filter, build_sort
+from .utils import required_params, try_parse_int, generate_exception_response
 
-LIMIT = 20
+DEFAULT_LIMIT = 20
 blueprint = Blueprint('cards', __name__)
 
 
 @blueprint.route('/cards', methods=['POST'])
 @required_params(CardSchema(unknown=INCLUDE))
-def create_single_card():
+def post_single_card():
+    """Card Post
+    ---
+    post:
+      description: Create a new card
+      parameters:
+      - in: body
+        name: body
+        schema: CardSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatabaseResponse
+    """
     new_card = request.get_json()
 
     try:
@@ -49,32 +66,96 @@ def create_single_card():
 
 
 @blueprint.route('/cards', methods=['GET'])
-def retrieve_multiple_cards():
+def get_multiple_cards():
+    """Cards Get
+    ---
+    get:
+      description: return a list of all of the cards
+      parameters:
+      - in: query
+        name: filter
+        description: Filter out cards based on specific criteria
+      - in: query
+        name: projection
+        description: Return only specified parameters
+      - in: query
+        name: page
+        description: Enable Pagination and get the appropriate data
+      - in: query
+        name: sort
+        description: Sort the data by certain fields
+      - in: query
+        name: order
+        description: Change the order of the sort
+      responses:
+        200:
+          content:
+            application/json:
+              schema: CardsResponse
+    """
     args = request.args
+    
+    filter = {}
+    projection = None
+    skip = 0
+    limit = 0
+    order = ASCENDING
+    sort = [('name', order )]
 
-    # Insert logic to parse query here, including try catch for bad queries
-    page = try_parse_int(args.get('page'), default_value=0)
-    query_string = args.get('query')
-    print(f'Query String: {query_string}')
-    query = build_mongodb_query(query_string) if query_string and not query_string.isspace() else {}
-    print(f'Query Object: {query}')
+    if args.get('filter'):
+        filter = build_filter(args.get('filter'))
+
+    if args.get('projection'):
+        projection = [p for p in args.get('projection').split(',') if p in VALID_FIELD_NAMES]
+    
+    if args.get('page'):
+        skip = (try_parse_int(args.get('page'), default_value=1) - 1) * limit
+        limit = DEFAULT_LIMIT
+
+    if args.get('order'):
+        if args.get('order').lower() == 'descending' or args.get('order') == -1:
+            order = DESCENDING
+
+    if args.get('sort') and args.get('sort') in ['name', 'set', 'mana_value']:
+        sort = [(args.get('sort'), order)]
+        if args.get('sort') == 'set':
+            sort.append(('set_number', ASCENDING))
 
     try:
         with get_client() as client:
             collection = client['mtgSearchApp']['cards']
-            results_count = collection.estimated_document_count() if query == {} else collection.count_documents(query)
-            total_pages = (results_count // LIMIT) + (0 if results_count % LIMIT == 0 else 1)
-            cursor = collection.find(query).sort('name', ASCENDING).skip(page * LIMIT).limit(LIMIT)
+            if args.get('page'):
+                results_count = collection.estimated_document_count() if filter == {} else collection.count_documents(filter)
+                total_pages = (results_count // limit)
+            cursor = collection.find(filter=filter, projection=projection, skip=skip, limit=limit, sort=sort)
             result = [c for c in cursor]
             [r.pop('_id') for r in result]
-            return jsonify({ 'cards': result, 'page': page, 'totalPages': total_pages }), 200
+        
+        output = { 'status': 'OK', 'cards': result }
+        if args.get('page'):
+            output['page'] = args.get('page')
+            output['totalPages'] = total_pages
+
+        return output, 200
     except BaseException as err:
-        print(f'Unhandled {type(err)=}: {err}')
-        return jsonify(f'Unhandled {type(err)=}: {err}'), 500
+        return generate_exception_response('Failed to get cards', err), 500
 
 
 @blueprint.route('/cards/<id>', methods=['GET'])
-def retrieve_single_card(id):
+def get_single_card(id):
+    """Card Get
+    ---
+    get:
+      description: Get a single card
+      parameters:
+      - in: path
+        name: id
+      responses:
+        200:
+          content:
+            application/json:
+              schema: CardsResponse
+    """
     try:
         with get_client() as client:
             collection = client['mtgSearchApp']['cards']
@@ -84,22 +165,56 @@ def retrieve_single_card(id):
             return { 'message': 'No card found' }, 404
         
         card.pop('_id')
-        return card, 200
+        output = { 'status': 'OK', 'cards': [card] }
+        return output, 200
     except BaseException as err:
-        return { 'error': f'{err}', 'message': 'Unknown error searching for card' }, 500
+        return generate_exception_response(f'Failed to get card with id: {id}'), 500
+
+
+# !!! --- NOT WORKING --- !!!
+# @blueprint.route('/cards', methods = ['PUT'])
+# @required_params(UpdateBodySchema())
+# def put_multiple_cards():
+#     body = request.get_json()
+#     try:
+#         with get_client() as client:
+#             collection = client['mtgSearchApp']['cards']
+#             result = collection.update_many(body['filter'], body['update'])
+#     except BaseException as err:
+#         return generate_exception_response(f'Failed to update cards'), 500
+    
+#     if result.acknowledged:
+#         return { 'status': 'OK', 'message': 'Update run successfully', 'details': result }, 201
+#     else:
+#         return { 'status': 'ERROR', 'message': 'Failed to update cards', 'details': f'{result}' }, 500
 
 
 @blueprint.route('/cards/<id>', methods=['PUT'])
 @required_params(CardSchema(unknown=INCLUDE))
-def update_single_card(id):
+def put_single_card(id):
+    """Card Put
+    ---
+    put:
+      description: Update a single card
+      parameters:
+      - in: path
+        name: id
+      - in: body
+        name: body
+        schema: CardSchema
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatabaseResponse
+    """
     updated_card = request.get_json()
     try:
         with get_client() as client:
             collection = client['mtgSearchApp']['cards']
             result = collection.update_one({ 'id': id }, update={ '$set': updated_card })
     except BaseException as err:
-        print(f'Unhandled {type(err)=}: {err}')
-        return jsonify(f'Unhandled {type(err)=}: {err}'), 500
+        return generate_exception_response(f'Failed to update card with id: {id}'), 500
     
     if result.acknowledged and result.modified_count == 1:
         return { 'status': 'OK', 'message': 'Updated Card' }, 201
@@ -109,11 +224,53 @@ def update_single_card(id):
 
 @blueprint.route('/cards/<id>', methods=['DELETE'])
 def delete_single_card(id):
+    """Card Delete
+    ---
+    delete:
+      description: Delete a single card
+      parameters:
+      - in: path
+        name: id
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatabaseResponse
+    """
     try:
         with get_client() as client:
             collection = client['mtgSearchApp']['cards']
             result = collection.delete_one({ 'id': id })
-            print(result)
-            return { 'message': 'Card Deleted' }, 200
+            return { 'status': 'OK', 'message': 'Card Deleted', 'details': result }, 200
     except BaseException as err:
-        return { 'error': f'{err}', 'message': 'Unknown error deleting for card' }, 500
+        return generate_exception_response(f'Failed to delete card with id: {id}', err), 500
+
+
+# Some Helper Calls for distinct calls and the like
+@blueprint.route('/cards/distinct/<key>', methods=['GET'])
+def get_distinct_values_for_key(key):
+    """Card Distinct Get
+    ---
+    get:
+      description: Get the distinct values for a certain key in the database
+      parameters:
+      - in: path
+        name: key
+      responses:
+        200:
+          content:
+            application/json:
+              schema: DatabaseResponse
+    """
+    allowed_keys = ['colors', 'color_identity', 'mana_cost']
+    if not key in allowed_keys:
+        return { 'status': 'ERROR', 'message': 'The only keys allowed are: {allowed_keys}' }, 400
+    
+    try:
+        with get_client() as client:
+            collection = client['mtgSearchApp']['cards']
+            result = collection.distinct(key)
+        
+        return { 'status': 'OK', 'key': key, 'data': result }, 200
+    except BaseException as err:
+        return generate_exception_response(f'Failed to delete card with id: {id}', err), 500

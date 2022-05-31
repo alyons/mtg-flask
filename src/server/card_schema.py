@@ -1,5 +1,46 @@
 from marshmallow import Schema, fields
 
+VALID_FIELD_NAMES = [
+    'artist', 
+    'border', 
+    'color_identity', 
+    'colors', 
+    'flavor', 
+    'foreign_data', 
+    'hand', 
+    'id', 
+    'image_url', 
+    'layout', 
+    'legalities', 
+    'life', 
+    'loyalty', 
+    'mana_cost', 
+    'mana_value', 
+    'multiverse_id', 
+    'name', 
+    'names', 
+    'number', 
+    'original_text', 
+    'power', 
+    'printings', 
+    'rarity', 
+    'release_date', 
+    'reserved', 
+    'rulings', 
+    'set', 
+    'set_name', 
+    'source', 
+    'starter', 
+    'subtypes', 
+    'supertypes', 
+    'text', 
+    'timeshifted', 
+    'toughness', 
+    'types', 
+    'variations', 
+    'watermark', 
+]
+
 class CardSchema(Schema):
     artist = fields.String(default=None, allow_none=True)
     # border

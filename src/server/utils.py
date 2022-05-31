@@ -4,6 +4,68 @@ from marshmallow import Schema, ValidationError
 from functools import wraps
 from flask import request
 
+FORMAT_NAMES = [
+    'Alchemy',
+    'Brawl',
+    'Commander',
+    'Duel',
+    'Explorer',
+    'Future',
+    'Gladiator',
+    'Historic',
+    'Historicbrawl',
+    'Legacy',
+    'Modern',
+    'Oldschool',
+    'Pauper',
+    'Paupercommander',
+    'Penny',
+    'Pioneer',
+    'Premodern',
+    'Standard',
+    'Vintage'
+]
+
+FACTION_COLOR_DICT = {
+    'colorless': '',
+    'devoid': '',
+    'white': 'w',
+    'blue': 'u',
+    'black': 'b',
+    'red': 'r',
+    'green': 'g',
+    'azorius': 'wu',
+    'boros': 'rw',
+    'dimir': 'ub',
+    'golgari': 'bg',
+    'gruul': 'rg',
+    'izzet': 'ur',
+    'orzhov': 'wb',
+    'rakdos': 'rb',
+    'selesnya': 'wg',
+    'simic': 'ug',
+    'abzan': 'wbg',
+    'bant': 'wug',
+    'esper': 'wub',
+    'grixis': 'urb',
+    'jeskai': 'wur',
+    'jund': 'brg',
+    'mardu': 'wbr',
+    'naya': 'wgr',
+    'sultai': 'ubg',
+    'temur': 'urg',
+    'glint': 'ubrg',
+    'dune': 'wbrg',
+    'ink': 'wurg',
+    'witch': 'wubg',
+    'yore': 'wubr',
+    'silverquill': 'bw',
+    'prismari': 'ub',
+    'witherbloom': 'bg',
+    'lorehold': 'rw',
+    'quandrix': 'gu'
+}
+
 
 def try_parse_int(x, base=10, default_value=None):
     try:
@@ -69,3 +131,21 @@ def required_params(schema: Schema):
         
         return wrapper
     return decorator
+
+
+def double_check_color(value: str, control: str) -> bool:
+    if control.lower() == value.lower(): return True
+
+    if control.lower() == 'w' and value.lower() == 'white': return True
+    if control.lower() == 'u' and value.lower() == 'blue': return True
+    if control.lower() == 'b' and value.lower() == 'black': return True
+    if control.lower() == 'r' and value.lower() == 'red': return True
+    if control.lower() == 'g' and value.lower() == 'green': return True
+
+    return False
+
+
+def generate_exception_response(message: str, err: BaseException = None) -> object:
+    response = { 'status': 'ERROR', 'message': message }
+    if err: response['details'] = f'Unhandled {type(err)=}: {err}'
+    return response

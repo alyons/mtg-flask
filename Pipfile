@@ -9,6 +9,9 @@ pymongo = "*"
 reprint = "*"
 waitress = "*"
 marshmallow = "*"
+apispec = {version = "*", extras = ["marshmallow"]}
+apispec-webframeworks = "*"
+flask-swagger-ui = "*"
 
 [dev-packages]
 docstring_parser = "*"
@@ -24,6 +27,7 @@ pytest-watch = "*"
 rich = "*"
 server = {path = ".", editable = true}
 wheel = "*"
+requests = "*"
 
 [requires]
 python_version = "3.10"
