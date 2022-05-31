@@ -109,8 +109,9 @@ def get_multiple_cards():
         projection = [p for p in args.get('projection').split(',') if p in VALID_FIELD_NAMES]
     
     if args.get('page'):
-        skip = (try_parse_int(args.get('page'), default_value=1) - 1) * limit
+        print(f"Page: {args.get('page')}")
         limit = DEFAULT_LIMIT
+        skip = (try_parse_int(args.get('page'), default_value=1) - 1) * limit
 
     if args.get('order'):
         if args.get('order').lower() == 'descending' or args.get('order') == -1:
